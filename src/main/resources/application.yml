@@ -1,0 +1,14 @@
+quarkus:
+  hibernate-orm:
+    validate-in-dev-mode: false
+    implicit-naming-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
+    physical-naming-strategy: org.example.util.PostgreSqlPhysicalNamingStrategy
+    database:
+      generation: update
+  http:
+    cors: true
+"%dev":
+  quarkus:
+    http:
+      cors:
+        origins: /.*/
