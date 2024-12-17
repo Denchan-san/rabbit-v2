@@ -1,12 +1,32 @@
+mp:
+  jwt:
+    verify:
+      publickey:
+        location: META-INF/resources/publicKey.pem
+    issuer: http://localhost:8080
+
+smallrye:
+  jwt:
+    sign:
+      key:
+        location: META-INF/resources/privateKey.pem
+
 quarkus:
+  smallrye-jwt:
+    enabled: true
+
   hibernate-orm:
     validate-in-dev-mode: false
     implicit-naming-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
     physical-naming-strategy: org.example.util.PostgreSqlPhysicalNamingStrategy
     database:
       generation: update
+
   http:
     cors: true
+    auth:
+      proactive: true
+
 "%dev":
   quarkus:
     http:

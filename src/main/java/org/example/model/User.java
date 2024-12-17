@@ -30,4 +30,7 @@ public class User extends PanacheEntityBase {
             inverseJoinColumns = @JoinColumn(name = "roles_id"))
     private Set<Role> roles = new LinkedHashSet<>();
 
+    public static User findByUsername(String username) {
+        return find("username", username).firstResult();
+    }
 }

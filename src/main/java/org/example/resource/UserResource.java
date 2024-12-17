@@ -41,6 +41,17 @@ public interface UserResource extends PanacheEntityResource<User, Long> {
         return Response.ok(user).build();
     }
 
+    @GET
+    @Path("findByUsername/{username}")
+    @Produces(MediaType.APPLICATION_JSON)
+    default Response findByUsername(@PathParam("username") String username) {
+        // Use User's static method to find by username
+        User user = User.find("username", username).firstResult();
+        if (user == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok(user).build();
+    }
 
     @Override
     @MethodProperties(exposed = false)
