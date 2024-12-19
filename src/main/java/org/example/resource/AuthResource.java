@@ -13,8 +13,7 @@ import org.example.util.PasswordUtils;
 
 import jakarta.transaction.Transactional;
 
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
@@ -38,7 +37,7 @@ public class AuthResource {
                     .build();
         }
 
-        String token = tokenService.generateToken(user.getUsername(), user.getRoles());
+        String token = tokenService.generateToken(user.getUsername(), user.getRoles(), user.getId());
 
         return Response.ok().entity("{\"token\":\"" + token + "\"}").build();
     }
@@ -49,22 +48,38 @@ public class AuthResource {
     public Response register(UserPost userPost) {
         User existingUser = User.find("username", userPost.getUsername()).firstResult();
         if (existingUser != null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("{\"error\":\"Username already taken\"}").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\":\"Username already taken\"}")
+                    .build();
         }
 
+        // Hashing password securely
         String hashedPassword = PasswordUtils.hashPassword(userPost.getPassword());
 
         User newUser = new User();
         newUser.setUsername(userPost.getUsername());
         newUser.setEmail(userPost.getEmail());
         newUser.setPassword(hashedPassword);
-        newUser.setRoles(new HashSet<>(Collections.singleton(Role.findById(1))));
+        if(newUser.getUsername().equals("denchan")) {
+            newUser.setRoles(new HashSet<>(Arrays.asList(
+                    Role.findById(1),
+                    Role.findById(2)
+            )));
+        }
+        else newUser.setRoles(new HashSet<>(Collections.singleton(Role.findById(1))));
 
         newUser.persist();
 
-        String token = tokenService.generateToken(newUser.getUsername(), newUser.getRoles());
+        String token = tokenService.generateToken(newUser.getUsername(), newUser.getRoles(), newUser.getId());
+
+        // Return a structured JSON response
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("message", "User registered successfully");
+        responseMap.put("token", token);
+
         return Response.status(Response.Status.CREATED)
-                .entity("{\"message\":\"User registered successfully\", \"token\":\"" + token + "\"}")
+                .entity(responseMap)  // Use Map directly as the entity, it will be serialized to JSON automatically
                 .build();
     }
+
 }

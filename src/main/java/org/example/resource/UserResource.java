@@ -11,18 +11,32 @@ import org.example.model.User;
 import org.example.resource.dto.UserMapper;
 import org.example.resource.dto.UserPost;
 import org.example.resource.dto.UserPut;
+import org.example.util.PasswordUtils;
 
 import java.net.URI;
 
 @ResourceProperties(path = "users")
 public interface UserResource extends PanacheEntityResource<User, Long> {
+
     @POST
     @Transactional
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     default Response add(UserPost userPost) {
+        User existingUser = User.find("username", userPost.getUsername()).firstResult();
+        if (existingUser != null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\":\"Username already taken\"}")
+                    .build();
+        }
+
+        // Hash the password before persisting
+        String hashedPassword = PasswordUtils.hashPassword(userPost.getPassword());
+
         User user = UserMapper.INSTANCE.toModel(userPost);
+        user.setPassword(hashedPassword); // Set the hashed password
         user.persist();
+
         return Response.created(URI.create("/users/" + user.getId())).build();
     }
 
@@ -36,10 +50,28 @@ public interface UserResource extends PanacheEntityResource<User, Long> {
         if (user == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        UserMapper.INSTANCE.update(user,userPut);
+
+        // Initialize roles explicitly to avoid LazyInitializationException
+        user.getRoles().size();
+
+        // Update password only if provided
+        if (userPut.getPassword() != null && !userPut.getPassword().isEmpty()) {
+            String hashedPassword = PasswordUtils.hashPassword(userPut.getPassword());
+            userPut.setPassword(hashedPassword);
+        }
+        else {
+            userPut.setPassword(user.getPassword());
+        }
+
+
+        // Map DTO to the entity
+        UserMapper.INSTANCE.update(user, userPut);
+
+        // Persist updated user
         user.persist();
         return Response.ok(user).build();
     }
+
 
     @GET
     @Path("findByUsername/{username}")
